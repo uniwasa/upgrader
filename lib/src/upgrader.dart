@@ -33,6 +33,18 @@ typedef WillDisplayUpgradeCallback = void Function(
     String? installedVersion,
     String? appStoreVersion});
 
+typedef CustomAction = void Function({
+  required BuildContext context,
+  required String message,
+  required String? releaseNotes,
+  required bool canDismissDialog,
+  void Function(BuildContext context, bool shouldPop)? onUserIgnored,
+  void Function(BuildContext context, bool shouldPop)? onUserLater,
+  required void Function(BuildContext context, bool shouldPop) onUserUpdated,
+  required bool isBlocked,
+  required UpgraderMessages messages,
+});
+
 /// There are two different dialog styles: Cupertino and Material
 enum UpgradeDialogStyle { cupertino, material }
 
@@ -130,6 +142,8 @@ class Upgrader {
   /// is logging metrics for your app.
   WillDisplayUpgradeCallback? willDisplayUpgrade;
 
+  CustomAction? customAction;
+
   /// The target operating system.
   final String operatingSystem = UpgradeIO.operatingSystem;
 
@@ -167,6 +181,7 @@ class Upgrader {
     this.onUpdate,
     this.shouldPopScope,
     this.willDisplayUpgrade,
+    this.customAction,
     http.Client? client,
     this.showIgnore = true,
     this.showLater = true,
@@ -416,12 +431,32 @@ class Upgrader {
       if (shouldDisplay) {
         _displayed = true;
         Future.delayed(const Duration(milliseconds: 0), () {
-          _showDialog(
+          if (customAction != null) {
+            customAction!(
               context: context,
-              title: messages.message(UpgraderMessage.title),
               message: message(),
               releaseNotes: shouldDisplayReleaseNotes() ? _releaseNotes : null,
-              canDismissDialog: canDismissDialog);
+              canDismissDialog: canDismissDialog,
+              onUserIgnored: showIgnore
+                  ? (context, shouldPop) => onUserIgnored(context, shouldPop)
+                  : null,
+              onUserLater: showLater
+                  ? (context, shouldPop) => onUserLater(context, shouldPop)
+                  : null,
+              onUserUpdated: (context, shouldPop) =>
+                  onUserUpdated(context, shouldPop),
+              isBlocked: blocked(),
+              messages: messages,
+            );
+          } else {
+            _showDialog(
+                context: context,
+                title: messages.message(UpgraderMessage.title),
+                message: message(),
+                releaseNotes:
+                    shouldDisplayReleaseNotes() ? _releaseNotes : null,
+                canDismissDialog: canDismissDialog);
+          }
         });
       }
     }

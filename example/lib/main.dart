@@ -27,10 +27,24 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Upgrader Example',
       home: UpgradeAlert(
+          upgrader: Upgrader(
+            customAction: ({
+              required canDismissDialog,
+              required context,
+              required message,
+              releaseNotes,
+              onUserIgnored,
+              onUserLater,
+              required onUserUpdated,
+              required isBlocked,
+              required messages,
+            }) =>
+                print('うおおお'),
+          ),
           child: Scaffold(
-        appBar: AppBar(title: Text('Upgrader Example')),
-        body: Center(child: Text('Checking...')),
-      )),
+            appBar: AppBar(title: Text('Upgrader Example')),
+            body: Center(child: Text('Checking...')),
+          )),
     );
   }
 }
